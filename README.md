@@ -1,6 +1,6 @@
 <div align="center">
 
-  # 迎屿 · Yoni | 空间治愈生活站 (Spatial Cozy Life Station)
+  # 迎屿 · Yoni
 
   **融合 2D 微缩立体插画与 Three.js 3D 自由视角空间的沉浸式个人数字自习室。** 
 
