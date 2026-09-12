@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>迎屿 · Yoni | 空间治愈生活站</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon-koala.svg">
+  <link rel="apple-touch-icon" href="icon-koala.svg">
+  <meta name="theme-color" content="#FBE79E">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- 引入温润手写字体与现代无衬线字体 -->
+  <link href="https://fonts.googleapis.com/css2?family=Delius&family=Itim&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- 引入 Three.js 支撑 3D 治愈空间 -->
+  <script src="three.min.js"></script>
+  <script src="GLTFLoader.js"></script>
+  <script src="OrbitControls.js"></script>
+</head>
+<body class="theme-creamy-yellow">
+  <!-- 奶白中心 + 四周柔和渐变淡彩色光晕背景 -->
+  <div class="milky-aura-bg">
+    <div class="aura aura-top-left"></div>
+    <div class="aura aura-top-right"></div>
+    <div class="aura aura-bottom-left"></div>
+    <div class="aura aura-bottom-right"></div>
+    <div class="aura aura-center-tint"></div>
+  </div>
+
+  <div class="spatial-app-shell">
+    <!-- =========================================================================
+         1. 顶部极简通透悬浮控制岛 (Floating Glass Header)
+         ========================================================================= -->
+    <!-- =========================================================================
+         1. 顶部极简一体式悬浮栏 (Unified Top Bar)
+         ========================================================================= -->
+    <header class="spatial-top-bar">
+      <!-- 左侧：品牌与实时时钟 -->
+      <div class="top-bar-left">
+        <div class="brand-zone">
+          <span class="brand-crown">👑</span>
+          <span class="brand-title">迎屿 <span class="brand-sub">Yoni</span></span>
+        </div>
+        <div class="top-v-divider"></div>
+        <button class="top-chip-btn" id="openClockHudBtn" title="查看数字时钟">
+          <span class="chip-icon">🕒</span>
+          <span id="headerLiveTimeStr">12:00:00</span>
+          <span class="chip-divider">·</span>
+          <span id="currentDateStr">9月7日 星期一</span>
+        </button>
+        <span class="top-meta-chip" id="weatherSnippet">🌤️ 26°C 晴</span>
+      </div>
+
+      <!-- 中间：2D / 3D 极简切换 -->
+      <div class="top-bar-center">
+        <div class="view-mode-pill-group">
+          <button class="view-mode-pill active" id="viewMode2dBtn" title="2D 模式">2D</button>
+          <button class="view-mode-pill" id="viewMode3dBtn" title="3D 模式">3D</button>
+        </div>
+      </div>
+
+      <!-- 右侧：环境控制与个人中心 -->
+      <div class="top-bar-right">
+        <button class="light-toggle-btn active" id="toggleLampLightBtn" title="暖黄台灯">
+          <span class="light-icon">💡</span>
+          <span>台灯</span>
+        </button>
+
+        <!-- 窗外天色快速切换 -->
+        <div class="sky-weather-selector" title="随时间/天气预览窗外天色">
+          <button class="sky-dot-btn active" data-sky="afternoon" title="☀️ 午后晴空">☀️</button>
+          <button class="sky-dot-btn" data-sky="morning" title="🌅 晨曦初霞">🌅</button>
+          <button class="sky-dot-btn" data-sky="dusk" title="🌇 橘红日落">🌇</button>
+          <button class="sky-dot-btn" data-sky="night" title="🌙 宁静星夜">🌙</button>
+          <button class="sky-dot-btn" data-sky="rainy" title="🌧️ 烟雨微芒">🌧️</button>
+        </div>
+
+        <!-- 7色主题微调色盘 -->
+        <div class="mini-palette" title="自选奶油主题色">
+          <button class="palette-dot" data-theme="theme-creamy-red" style="background:#F4A4A4;"></button>
+          <button class="palette-dot" data-theme="theme-creamy-orange" style="background:#FAC59B;"></button>
+          <button class="palette-dot active" data-theme="theme-creamy-yellow" style="background:#FBE79E;"></button>
+          <button class="palette-dot" data-theme="theme-pastel-green" style="background:#C4E8BE;"></button>
+          <button class="palette-dot" data-theme="theme-creamy-blue" style="background:#B8DCF5;"></button>
+          <button class="palette-dot" data-theme="theme-pastel-pink" style="background:#FBC2D3;"></button>
+          <button class="palette-dot" data-theme="theme-pastel-purple" style="background:#DDD0F6;"></button>
+        </div>
+
+        <!-- 用户头像与个人中心 (纯净 April) -->
+        <div class="clean-avatar-entry" id="openProfileBtn" title="点击查看个人中心">
+          <div class="avatar-badge" id="currentAvatarIcon">🐨</div>
+          <span class="avatar-name" id="userNameLabel">April</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- =========================================================================
+         2. 核心舞台区 (2D 插画 / 3D 空间)
+         ========================================================================= -->
+    <main class="spatial-viewport-container" id="spatialViewportContainer">
+      <!-- 🖼️ 模式 A：2D 完整展示舞台 -->
+      <div class="spatial-2d-stage" id="spatialPhotoStage">
+        <div class="cozy-diorama-card" id="cozyPhotoFrame">
+          <img src="room_cozy.jpg" alt="Cozy Room" class="cozy-room-img" id="cozyRoomImg">
+          <!-- 台灯暖光覆盖层 -->
+          <div class="lamp-glow-overlay" id="lampGlowOverlay"></div>
+
+          <!-- 原生交互按钮热区层 (确保点击 100% 触发对应功能) -->
+          <div class="interactive-hotspot-map" id="photoHotspotLayer">
+            <!-- 💻 电脑屏幕 (数独 / 涂鸦小憩) -->
+            <button type="button" class="room-hotspot" data-target="modal-tablet-games" data-label="电脑屏幕 · 数独/涂鸦" style="top:58%; left:27%; width:14%; height:20%;" title="电脑屏幕 · 数独/涂鸦"></button>
+            <!-- 🪴 窗台绿植 (专注番茄钟) -->
+            <button type="button" class="room-hotspot" data-target="modal-pomodoro-garden" data-label="窗台绿植 · 专注浇花" style="top:48%; left:50%; width:16%; height:28%;" title="窗台绿植 · 专注浇花"></button>
+            <!-- 📖 桌面手账 (日记) -->
+            <button type="button" class="room-hotspot" data-target="modal-scrapbook-journal" data-label="桌面手账 · 拍立得日记" style="top:76%; left:30%; width:12%; height:10%;" title="桌面手账 · 照片日记"></button>
+            <!-- ☕ 咖啡杯 (随手记账) -->
+            <button type="button" class="room-hotspot" data-target="modal-shark-ledger" data-label="暖暖咖啡 · 随手记账" style="top:77%; left:23.5%; width:6.5%; height:9%;" title="暖暖咖啡 · 随手记账"></button>
+            <!-- 📻 复古黑胶机 (音乐播放) -->
+            <button type="button" class="room-hotspot" data-target="modal-music-spotify" data-label="复古黑胶唱机 · 音乐陪伴" style="top:76%; left:56%; width:11%; height:16%;" title="复古黑胶唱机 · 音乐陪伴"></button>
+            <!-- 🕒 墙上挂钟 (实时时钟) -->
+            <button type="button" class="room-hotspot" data-target="modal-clock-hud" data-label="治愈挂钟 · 实时时间" style="top:37%; left:41%; width:8%; height:12%;" title="治愈挂钟 · 实时时间"></button>
+            <!-- 💡 暖心台灯 (开关灯) -->
+            <button type="button" class="room-hotspot" id="photoLampHotspot" data-action="toggle-lamp" data-label="暖黄台灯 · 点击开关" style="top:56%; left:36.5%; width:9%; height:20%;" title="暖黄台灯 · 点击开关"></button>
+            <!-- 👧 女生形象 (专注陪伴) -->
+            <button type="button" class="room-hotspot" id="photoGirlHotspot" data-action="girl-greet" data-label="April · 专注自习中" style="top:71%; left:41%; width:14%; height:24%;" title="April · 专注自习中"></button>
+            <!-- 🧸 玩偶收纳架 (粉色企鹅/小兔/小熊/小鸡) -->
+            <button type="button" class="room-hotspot" data-target="animalPickerModal" data-label="治愈玩偶架 · 萌宠伙伴" style="top:38%; left:19%; width:18%; height:16%;" title="治愈玩偶架 · 萌宠伙伴"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 🧊 模式 B：3D 自由视角空间 -->
+      <div class="spatial-3d-stage" id="spatial3dStage" style="display:none;">
+        <canvas id="webglRoomCanvas"></canvas>
+      </div>
+
+      <!-- 鼠标悬浮气泡 -->
+      <div class="spatial-hover-tooltip" id="roomObjectTooltip">
+        <span class="tooltip-icon" id="tooltipIcon">✨</span>
+        <span class="tooltip-text" id="tooltipText">点击开启互动</span>
+      </div>
+
+      <!-- 底部居中导览坞 (Spatial Quick Dock) -->
+      <nav class="spatial-bottom-dock" aria-label="房间物品互动导览">
+        <button class="dock-item-pill" data-target="modal-pomodoro-garden" title="窗台花盆 · 专注浇花与成就">
+          <span class="dock-icon">🪴</span>
+          <span class="dock-label">专注</span>
+        </button>
+        <button class="dock-item-pill" data-target="modal-scrapbook-journal" title="桌上手账 · 照片网格手账">
+          <span class="dock-icon">📖</span>
+          <span class="dock-label">手账</span>
+        </button>
+        <button class="dock-item-pill" data-target="modal-shark-ledger" title="日常记账 · 极速记账">
+          <span class="dock-icon">👛</span>
+          <span class="dock-label">记账</span>
+        </button>
+        <button class="dock-item-pill" data-target="modal-music-spotify" title="复古黑胶机 · Lofi / Jazz">
+          <span class="dock-icon">📻</span>
+          <span class="dock-label">音乐</span>
+        </button>
+        <button class="dock-item-pill" data-target="modal-tablet-games" title="触控平板 · 数独 & 涂鸦">
+          <span class="dock-icon">💻</span>
+          <span class="dock-label">小憩</span>
+        </button>
+        <button class="dock-item-pill" data-target="modal-calendar-todo" title="桌面日历 · 待办与日程">
+          <span class="dock-icon">📅</span>
+          <span class="dock-label">日程</span>
+        </button>
+        <button class="dock-item-pill" data-target="modal-glb-loader" title="3D 空间模型管理与导入">
+          <span class="dock-icon">📦</span>
+          <span class="dock-label">3D模型</span>
+        </button>
+      </nav>
+    </main>
+  </div>
+
+  <!-- =========================================================================
+       3. 磨砂玻璃交互抽屉与弹窗集合 (Frosted Glass Drawers & Modals)
+       ========================================================================= -->
+
+  <!-- 🪴 抽屉 1：番茄钟专注 + 浇花成长 + 6大花种培育图鉴 (Flower Pot) -->
+  <div class="frosted-glass-drawer" id="modal-pomodoro-garden">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <span class="drawer-icon">🪴</span>
+        <h2>专注计时</h2>
+      </div>
+      <button class="drawer-close-btn" data-close="modal-pomodoro-garden">✕</button>
+    </div>
+    <div class="drawer-body">
+      <!-- 专注模式锁定提示 (专注期间禁止玩游戏防沉迷) -->
+      <div class="focus-lock-banner" id="focusLockBanner" style="display: none;">
+        <span class="lock-icon">🔒</span>
+        <span>专注模式进行中，娱乐功能已暂时锁定</span>
+      </div>
+
+      <!-- 动态花盆与生长动画区 -->
+      <div class="plant-pot-wrapper" id="plantPotWrapper">
+        <div class="watering-can-positioned" id="wateringCan">
+          <div class="can-spout"></div>
+          <div class="can-main-body"></div>
+          <div class="water-drops-stream">
+            <span class="d-drop p1">💧</span>
+            <span class="d-drop p2">💧</span>
+            <span class="d-drop p3">✨</span>
+          </div>
+        </div>
+        <div class="plant-growth-view" id="plantView">
+          <div class="flower-bloom" id="flowerBloom">
+            <div class="petals">
+              <span class="petal p1"></span>
+              <span class="petal p2"></span>
+              <span class="petal p3"></span>
+              <span class="petal p4"></span>
+              <span class="petal center"></span>
+            </div>
+            <div class="stem"></div>
+            <div class="leaf left"></div>
+            <div class="leaf right"></div>
+          </div>
+        </div>
+        <div class="clay-pot">
+          <div class="pot-rim"></div>
+          <div class="pot-base"></div>
+          <span class="pot-face">ᵕ̈</span>
+        </div>
+      </div>
+
+      <!-- 成长进度 -->
+      <div class="growth-progress-box">
+        <div class="progress-labels">
+          <span id="plantStageBadge">🌱 嫩芽期 (Lv.1)</span>
+          <span id="growthExpText">30 / 100 EXP</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="growthProgressBar" style="width: 30%;"></div>
+        </div>
+        <div class="pot-stats-row">
+          <span>💧 已浇水: <b id="waterCountText">3</b> 次</span>
+          <span>⏱️ 今日专注: <b id="todayFocusTimeText">45</b> 分钟</span>
+        </div>
+      </div>
+
+      <!-- 番茄钟控制 -->
+      <div class="timer-section">
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div class="timer-modes">
+          <button class="mode-pill active" data-time="1500">25 分钟</button>
+          <button class="mode-pill" data-time="900">15 分钟</button>
+          <button class="mode-pill" data-time="300">5 分钟</button>
+          <button class="mode-pill quick-test-btn" data-time="5" title="5秒极速浇水测试">⚡ 5秒速试</button>
+        </div>
+        <div class="timer-actions">
+          <button class="primary-cozy-btn theme-colored-btn" id="startTimerBtn">
+            <span id="timerBtnText">开始专注浇花</span>
+          </button>
+          <button class="secondary-cozy-btn" id="resetTimerBtn">重置</button>
+        </div>
+      </div>
+
+      <!-- 多花种培育温室图鉴 (每专注满1小时解锁稀有品种) -->
+      <div class="greenhouse-herbarium-box">
+        <div class="herbarium-header">
+          <span class="sub-title">🌸 治愈温室花卉标本库</span>
+          <span class="herbarium-badge" id="herbariumUnlockedBadge">已盛开 3/6 种</span>
+        </div>
+        <p class="herbarium-desc">每累计专注满 1 小时，窗台花盆随机盛开一朵全新的稀有花卉！</p>
+        <div class="flower-species-grid" id="flowerSpeciesGrid">
+          <div class="species-card unlocked" data-flower="daisy">
+            <span class="species-emoji">🌼</span>
+            <span class="species-name">纯白雏菊</span>
+            <span class="species-count">x2 盛开</span>
+          </div>
+          <div class="species-card unlocked" data-flower="tulip">
+            <span class="species-emoji">🌷</span>
+            <span class="species-name">朱红郁金香</span>
+            <span class="species-count">x1 盛开</span>
+          </div>
+          <div class="species-card unlocked" data-flower="cactus">
+            <span class="species-emoji">🌵</span>
+            <span class="species-name">圆润仙人球</span>
+            <span class="species-count">x1 盛开</span>
+          </div>
+          <div class="species-card" data-flower="succulent">
+            <span class="species-emoji">🪴</span>
+            <span class="species-name">翡翠多肉</span>
+            <span class="species-count">专注待解锁</span>
+          </div>
+          <div class="species-card" data-flower="bellflower">
+            <span class="species-emoji">🪻</span>
+            <span class="species-name">风铃草</span>
+            <span class="species-count">专注待解锁</span>
+          </div>
+          <div class="species-card" data-flower="fern">
+            <span class="species-emoji">🌿</span>
+            <span class="species-name">翠羽小蕨草</span>
+            <span class="species-count">专注待解锁</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📖 抽屉 2：拍立得照片网格手账本 (Scrapbook Journal, 参考图 5) -->
+  <div class="frosted-glass-drawer wide-drawer" id="modal-scrapbook-journal">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <span class="drawer-icon">📖</span>
+        <h2>迎屿手账本 · 拍立得相片生活志</h2>
+      </div>
+      <div class="scrapbook-page-nav">
+        <button class="page-nav-btn" id="scrapbookPrevPageBtn">‹ 前一天</button>
+        <span class="page-nav-indicator" id="scrapbookPageIndicator">2026年9月6日</span>
+        <button class="page-nav-btn" id="scrapbookNextPageBtn">后一天 ›</button>
+        <button class="secondary-cozy-btn small-btn" id="scrapbookTodayBtn">翻到今天</button>
+      </div>
+      <button class="drawer-close-btn" data-close="modal-scrapbook-journal">✕</button>
+    </div>
+
+    <div class="drawer-body scrapbook-journal-body">
+      <!-- 实体手账展开双面设计 (细浅网格米质纸底) -->
+      <div class="scrapbook-booklet">
+        <!-- 左页：日历小方格与拍立得照片胶带黏贴 -->
+        <div class="scrapbook-page page-left">
+          <div class="washi-tape-strip tape-top-left"></div>
+          <div class="washi-tape-strip tape-top-right"></div>
+          
+          <div class="page-header-row">
+            <span class="scrapbook-month-script" id="scrapbookMonthScript">september</span>
+            <span class="scrapbook-stamp-seal">AIR MAIL · 2026</span>
+          </div>
+
+          <!-- 本月小网格迷你打卡日历 (参考图 5) -->
+          <div class="mini-calendar-grid" id="scrapbookMiniCalGrid"></div>
+
+          <!-- 拍立得照片装裱区 (和纸胶带固定) -->
+          <div class="polaroid-scrapbook-slot" id="polaroidScrapbookSlot">
+            <div class="polaroid-pinned-card">
+              <div class="pin-tape-clip"></div>
+              <img id="scrapbookDisplayPhoto" src="" alt="今日留影" style="display: none;">
+              <div class="photo-placeholder-wrap" id="photoPlaceholderWrap">
+                <span class="photo-cam-icon">📷</span>
+                <span class="photo-tip">点击下方按钮贴入今日生活瞬间</span>
+              </div>
+              <span class="polaroid-hand-label">Today's moment 🍁</span>
+            </div>
+          </div>
+
+          <!-- 上传相片控制 -->
+          <div class="scrapbook-photo-actions">
+            <input type="file" id="journalPhotoInput" accept="image/*" style="display: none;">
+            <button type="button" class="secondary-cozy-btn small-btn" id="triggerPhotoUploadBtn">
+              📷 贴上拍立得生活照
+            </button>
+            <div id="journalPhotoPreviewWrap" style="display: none;">
+              <span class="preview-mini-chip">已选 1 张照片</span>
+              <button type="button" class="remove-photo-text-btn" id="removePhotoBtn">✕ 移除</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右页：写字便签、手绘涂鸦与 AI 盈盈温情回应当 -->
+        <div class="scrapbook-page page-right">
+          <div class="washi-tape-strip tape-top-right"></div>
+
+          <!-- 牛皮纸便签块 (This Month / Today's Notes) -->
+          <div class="craft-paper-note-card">
+            <div class="craft-tape-pin"></div>
+            <span class="craft-note-title">today's thought ✎</span>
+            <textarea 
+              id="journalInput" 
+              class="scrapbook-textarea" 
+              placeholder="写下今天的琐碎喜怒哀乐，文字会以手账笔触留存..."
+            ></textarea>
+            <div class="craft-actions-bar">
+              <button class="primary-cozy-btn theme-colored-btn small-btn" id="saveJournalBtn">
+                盖印保存手账 ✨
+              </button>
+            </div>
+          </div>
+
+          <!-- AI 盈盈手写便签回执信封 -->
+          <div class="ai-feedback-envelope" id="aiFeedbackEnvelope" style="display: none;">
+            <div class="envelope-header">
+              <span class="stamp-chip" id="aiMoodStamp">💛 焦糖温甜</span>
+              <span class="ai-weather-badge" id="aiWeatherStamp">🌤️ 微风舒缓</span>
+            </div>
+            <div class="envelope-photo-slot" id="envelopePhotoSlot" style="display: none;">
+              <div class="polaroid-card-frame">
+                <img id="envelopePhotoImg" src="" alt="今日留影">
+                <span class="polaroid-caption">Today's Moment ✨</span>
+              </div>
+            </div>
+            <div class="envelope-body">
+              <p class="ai-summary-text" id="aiSummaryText">
+                “辛苦啦！做得很棒，今晚安安心心睡个好觉吧~”
+              </p>
+            </div>
+            <div class="envelope-footer">
+              <span class="envelope-time" id="aiFeedbackTime">刚刚记录</span>
+              <span class="envelope-sign" id="envelopeSignName">盈盈 🐨</span>
+            </div>
+          </div>
+
+          <!-- 心情地毯方格网 (点选重温往日胶囊) -->
+          <div class="mood-carpet-section">
+            <div class="mood-carpet-header">
+              <span class="sub-title">🏷️ 心情印章地毯</span>
+              <span class="card-pill" id="currentMonthYear">2026年 9月</span>
+            </div>
+            <div class="mood-grid-container" id="moodGridContainer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📱 抽屉 3：日常记账 APP 原生面板 (Daily Ledger) -->
+  <div class="frosted-glass-drawer" id="modal-shark-ledger">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <span class="drawer-icon">👛</span>
+        <h2>记账</h2>
+      </div>
+      <button class="drawer-close-btn" data-close="modal-shark-ledger">✕</button>
+    </div>
+
+    <div class="drawer-body shark-ledger-body">
+      <!-- 支出 / 收入 顶部标签页切换 -->
+      <div class="shark-type-tabs">
+        <button class="shark-tab-btn active" id="sharkExpenseTabBtn" data-type="expense">支出</button>
+        <button class="shark-tab-btn" id="sharkIncomeTabBtn" data-type="income">收入</button>
+      </div>
+
+      <!-- 20+ 款高饱和马卡龙微拟物圆底分类图标矩阵 -->
+      <div class="shark-category-grid" id="sharkCategoryGrid"></div>
+
+      <!-- 记账录入条 (金额超大显示 + 备注 + 日期) -->
+      <div class="shark-input-display-bar">
+        <div class="shark-selected-type-badge">
+          <span class="selected-cat-icon" id="sharkSelectedCatIcon">🍵</span>
+          <span class="selected-cat-name" id="sharkSelectedCatName">餐饮美食</span>
+        </div>
+        <div class="shark-amount-screen">
+          <span class="currency-symbol">¥</span>
+          <span class="amount-number" id="sharkAmountDisplay">0.00</span>
+        </div>
+      </div>
+
+      <!-- 备注行 -->
+      <div class="shark-remark-row">
+        <span class="remark-icon">💭</span>
+        <input type="text" id="sharkRemarkInput" class="cozy-input shark-remark" placeholder="点此输入备注（如：早点热奶茶半糖加燕麦）...">
+        <span class="shark-date-tag" id="sharkDateTag">今天</span>
+      </div>
+
+      <!-- 日常记账 4x4 原生贴底大键盘 -->
+      <div class="shark-keypad">
+        <button class="shark-key" data-num="7">7</button>
+        <button class="shark-key" data-num="8">8</button>
+        <button class="shark-key" data-num="9">9</button>
+        <button class="shark-key shark-op" data-num="+">+</button>
+
+        <button class="shark-key" data-num="4">4</button>
+        <button class="shark-key" data-num="5">5</button>
+        <button class="shark-key" data-num="6">6</button>
+        <button class="shark-key shark-op" data-num="-">-</button>
+
+        <button class="shark-key" data-num="1">1</button>
+        <button class="shark-key" data-num="2">2</button>
+        <button class="shark-key" data-num="3">3</button>
+        <button class="shark-key shark-func" data-num="DEL">⌫</button>
+
+        <button class="shark-key" data-num=".">.</button>
+        <button class="shark-key" data-num="0">0</button>
+        <button class="shark-key shark-func" data-num="C">清空</button>
+        <button class="shark-key shark-submit theme-colored-btn" id="sharkSubmitExpenseBtn">完成</button>
+      </div>
+
+      <!-- 今日流水账单 -->
+      <div class="shark-history-section">
+        <div class="shark-history-header">
+          <span class="sub-title">🧾 今日流水明细</span>
+          <div class="shark-sum-badges">
+            <span class="sum-badge exp">支出: ¥<b id="sharkTotalExpenseNum">0.00</b></span>
+            <span class="sum-badge inc">收入: ¥<b id="sharkTotalIncomeNum">0.00</b></span>
+          </div>
+        </div>
+        <ul class="shark-expense-list" id="sharkExpenseList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📻 抽屉 4：复古黑胶机与内嵌 Spotify 播放器 (Turntable & Spotify Embed) -->
+  <div class="frosted-glass-drawer" id="modal-music-spotify">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <span class="drawer-icon">📻</span>
+        <h2>复古黑胶播放器 · 氛围音乐</h2>
+      </div>
+      <button class="drawer-close-btn" data-close="modal-music-spotify">✕</button>
+    </div>
+
+    <div class="drawer-body music-spotify-body">
+      <!-- 复古黑胶机图形 (参考图 2 蜜桃粉底座、亚克力盖、唱针与旋转黑胶) -->
+      <div class="vintage-turntable-card">
+        <div class="turntable-chassis">
+          <div class="acrylic-cover-hinge"></div>
+          <div class="spinning-vinyl-disc" id="modalVinylDisc">
+            <div class="vinyl-groove"></div>
+            <div class="vinyl-label-center">
+              <span>Yoni Lofi</span>
+            </div>
+          </div>
+          <div class="tonearm-assembly">
+            <div class="tonearm-rod"></div>
+            <div class="tonearm-head"></div>
+          </div>
+          <div class="turntable-front-panel">
+            <span class="turntable-led-time" id="turntableLedTime">12:15</span>
+            <div class="turntable-knob" id="turntableKnob"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 本地高保真音源快速切换 -->
+      <div class="local-sound-switches">
+        <button class="sound-chip-btn active" id="playMusicBtn">
+          <span>🎵 柔和 Lofi 和弦</span>
+        </button>
+        <button class="sound-chip-btn" id="playJazzBtn">
+          <span>🎷 暖调爵士 Jazz</span>
+        </button>
+        <button class="sound-chip-btn" id="rainSoundBtn">
+          <span>🌧️ 窗外柔雨</span>
+        </button>
+        <button class="sound-chip-btn" id="fireSoundBtn">
+          <span>🔥 壁炉暖柴</span>
+        </button>
+      </div>
+
+      <!-- Spotify 播放器 -->
+      <div class="spotify-embed-card">
+        <div class="spotify-card-header">
+          <div class="spotify-brand">
+            <span class="spotify-logo">🟢</span>
+            <span class="spotify-name">Spotify 治愈歌单内嵌插件</span>
+          </div>
+          <span class="spotify-status-tag">在线播放</span>
+        </div>
+        <div class="spotify-iframe-wrap">
+          <iframe 
+            style="border-radius:14px;" 
+            src="https://open.spotify.com/embed/playlist/37i9dQZF1DX8Uebhn9wzrS?utm_source=generator&theme=0" 
+            width="100%" 
+            height="152" 
+            frameBorder="0" 
+            allowfullscreen="" 
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+            loading="lazy">
+          </iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 💻 抽屉 5：触控平板休闲双游戏 (Sudoku 数独 & Doodle 涂鸦) -->
+  <div class="frosted-glass-drawer" id="modal-tablet-games">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <span class="drawer-icon">💻</span>
+        <h2>触控平板 · 休闲休闲小游戏</h2>
+      </div>
+      <div class="tablet-game-tabs">
+        <button class="game-tab-pill active" id="tabSudokuBtn">🧩 极简数独</button>
+        <button class="game-tab-pill" id="tabDoodleBtn">🎨 灵感涂鸦</button>
+      </div>
+      <button class="drawer-close-btn" data-close="modal-tablet-games">✕</button>
+    </div>
+
+    <div class="drawer-body tablet-games-body">
+      <!-- 游戏 1：极简奶白治愈数独 (Sudoku) -->
+      <div class="game-sub-view active" id="viewSudokuGame">
+        <div class="sudoku-header-bar">
+          <div class="sudoku-difficulty-pills">
+            <button class="diff-pill active" data-diff="easy">轻松入门</button>
+            <button class="diff-pill" data-diff="medium">微风适中</button>
+            <button class="diff-pill" data-diff="hard">心流专注</button>
+          </div>
+          <button class="secondary-cozy-btn small-btn" id="newSudokuGameBtn">🔄 开新局</button>
+        </div>
+
+        <div class="sudoku-board-container" id="sudokuBoard"></div>
+
+        <div class="sudoku-num-pad">
+          <button class="sudoku-key" data-val="1">1</button>
+          <button class="sudoku-key" data-val="2">2</button>
+          <button class="sudoku-key" data-val="3">3</button>
+          <button class="sudoku-key" data-val="4">4</button>
+          <button class="sudoku-key" data-val="5">5</button>
+          <button class="sudoku-key" data-val="6">6</button>
+          <button class="sudoku-key" data-val="7">7</button>
+          <button class="sudoku-key" data-val="8">8</button>
+          <button class="sudoku-key" data-val="9">9</button>
+          <button class="sudoku-key erase" id="sudokuEraseBtn">擦除</button>
+        </div>
+      </div>
+
+      <!-- 游戏 2：涂鸦画板小画板 (Doodle Board) -->
+      <div class="game-sub-view" id="viewDoodleGame" style="display: none;">
+        <div class="doodle-header-actions">
+          <div class="doodle-prompt-banner">
+            <span class="prompt-sparkle">✨ 灵感题目：</span>
+            <span class="prompt-text" id="doodlePromptText">画一朵戴着草帽的向日葵 🌻</span>
+          </div>
+          <button class="secondary-cozy-btn small-btn" id="randomPromptBtn">🎲 换个题目</button>
+          <button class="secondary-cozy-btn small-btn" id="clearCanvasBtn">清空画布</button>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="doodleCanvas" width="480" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📅 抽屉 6：桌面日历与行程小秘书 (Calendar & Todolist) -->
+  <div class="frosted-glass-drawer" id="modal-calendar-todo">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <span class="drawer-icon">📅</span>
+        <h2>盈盈的行程小秘书与守候清单</h2>
+      </div>
+      <button class="drawer-close-btn" data-close="modal-calendar-todo">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <p class="drawer-desc">直接告诉小助手你的行程安排或考试安排，盈盈会自动帮你梳理日期、时间和确认卡片～</p>
+
+      <!-- 自然语言小秘书输入框 -->
+      <div class="assistant-chat-bar">
+        <div class="assistant-input-wrapper">
+          <span class="assistant-input-icon">✨</span>
+          <input 
+            type="text" 
+            id="assistantPromptInput" 
+            class="cozy-input assistant-input" 
+            placeholder="比如：我下周二下午6点有个考试 到晚上8点在学校"
+          >
+          <button class="primary-cozy-btn theme-colored-btn small-btn" id="sendToAssistantBtn">告诉小助手</button>
+        </div>
+      </div>
+
+      <!-- AI 行程确认卡片 (默认隐藏，解析后温馨展开) -->
+      <div class="ai-schedule-confirm-card" id="aiScheduleConfirmCard" style="display: none;">
+        <div class="confirm-card-header">
+          <div class="confirm-badge">
+            <span id="confirmAssistantIcon">🐨</span> 盈盈为你整理好啦：
+          </div>
+        </div>
+        <div class="confirm-details-grid">
+          <div class="detail-row">
+            <span class="detail-label">📅 日期规划：</span>
+            <span class="detail-val" id="parsedDateVal">2026-09-15 (星期二)</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">⏰ 守候时间：</span>
+            <span class="detail-val" id="parsedTimeVal">18:00 - 20:00</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">📌 事项内容：</span>
+            <span class="detail-val highlight" id="parsedEventVal">在学校考试</span>
+          </div>
+        </div>
+        <div class="confirm-question">要帮您同步加入日程与今日待办清单吗？</div>
+        <div class="confirm-actions-row">
+          <button class="confirm-btn yes-btn" id="confirmAddScheduleBtn">✨ 好的，帮我加入！</button>
+          <button class="confirm-btn no-btn" id="rejectAddScheduleBtn">✏️ 先等等，有要修改的</button>
+          <button class="confirm-btn cancel-flat-btn" id="dismissCardBtn">❌ 不加了</button>
+        </div>
+
+        <!-- 调整修改框 -->
+        <div class="modify-schedule-box" id="modifyScheduleBox" style="display: none;">
+          <div class="modify-input-group">
+            <label>修改日期：</label>
+            <input type="text" id="editDateInput" class="cozy-input small">
+          </div>
+          <div class="modify-input-group">
+            <label>修改时间：</label>
+            <input type="text" id="editTimeInput" class="cozy-input small">
+          </div>
+          <div class="modify-input-group">
+            <label>修改事项：</label>
+            <input type="text" id="editEventInput" class="cozy-input small">
+          </div>
+          <div class="modify-actions">
+            <button class="primary-cozy-btn theme-colored-btn small-btn" id="saveModifiedScheduleBtn">确认添加</button>
+            <button class="secondary-cozy-btn small-btn" id="cancelScheduleBtn">取消</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 待办清单 -->
+      <div class="todo-list-header-row">
+        <span class="sub-title">📌 当前守候清单与待办</span>
+        <span class="card-pill" id="todoProgressPill">已完成 1/3</span>
+      </div>
+      <div class="todo-input-row" id="manualTodoRow">
+        <input type="text" id="newTodoInput" class="cozy-input" placeholder="输入待办小目标，按回车添加...">
+        <button class="primary-cozy-btn theme-colored-btn small-btn" id="addTodoBtn">添加</button>
+      </div>
+      <ul class="todo-list" id="todoList"></ul>
+    </div>
+  </div>
+
+
+  <!-- 🕒 抽屉 8：挂钟数字时刻 HUD (Live Clock HUD) -->
+  <div class="frosted-glass-drawer" id="modal-clock-hud">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <span class="drawer-icon">🕒</span>
+        <h2>复古挂钟 · 实时数字时钟</h2>
+      </div>
+      <button class="drawer-close-btn" data-close="modal-clock-hud">✕</button>
+    </div>
+    <div class="drawer-body clock-hud-body">
+      <div class="digital-clock-display">
+        <span class="hud-time" id="hudDigitalTime">12:00:00</span>
+        <span class="hud-date" id="hudDigitalDate">2026年9月6日 星期日</span>
+      </div>
+      <div class="day-progress-wrap">
+        <div class="progress-labels">
+          <span>今日时光悄悄流淌</span>
+          <span id="dayProgressPercent">50%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="dayProgressBar" style="width: 50%;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       4. 独立模态框 (动物形象、个人设置、回忆胶囊)
+       ========================================================================= -->
+  <!-- 动物形象自选 Modal -->
+  <div class="cozy-modal-overlay" id="animalPickerModal">
+    <div class="cozy-modal-card">
+      <button class="modal-close-btn" id="closeAnimalModalBtn">✕</button>
+      <div class="modal-icon-header">
+        <div class="koala-mini-head">🐾 挑选你的专属伴侣形象</div>
+      </div>
+      <h3>选择陪伴你的萌宠伙伴</h3>
+      <div class="animal-options-grid">
+        <div class="animal-card-option active" data-animal="koala">
+          <div class="opt-icon">🐨</div>
+          <div class="opt-name">考拉 盈盈</div>
+          <div class="opt-desc">浅紫皇冠小考拉</div>
+        </div>
+        <div class="animal-card-option" data-animal="bunny">
+          <div class="opt-icon">🐰</div>
+          <div class="opt-name">小兔 软软</div>
+          <div class="opt-desc">奶白垂耳长耳兔</div>
+        </div>
+        <div class="animal-card-option" data-animal="bear">
+          <div class="opt-icon">🐻</div>
+          <div class="opt-name">小熊 敦敦</div>
+          <div class="opt-desc">焦糖暖棕小熊</div>
+        </div>
+        <div class="animal-card-option" data-animal="cat">
+          <div class="opt-icon">🐱</div>
+          <div class="opt-name">小猫 咪咪</div>
+          <div class="opt-desc">奶黄软萌折耳猫</div>
+        </div>
+        <div class="animal-card-option" data-animal="panda">
+          <div class="opt-icon">🐼</div>
+          <div class="opt-name">熊猫 团团</div>
+          <div class="opt-desc">黑白圆滚小熊猫</div>
+        </div>
+      </div>
+      <button class="primary-cozy-btn theme-colored-btn full-width" id="confirmAnimalBtn" style="margin-top: 18px;">
+        确定切换伴侣形象
+      </button>
+    </div>
+  </div>
+
+  <!-- 个人中心与生日设置 Modal -->
+  <div class="cozy-modal-overlay" id="profileModal">
+    <div class="cozy-modal-card">
+      <button class="modal-close-btn" id="closeProfileModalBtn">✕</button>
+      <div class="modal-icon-header">
+        <div class="koala-mini-head">👑 迎屿个人中心</div>
+      </div>
+      <h3>个人空间与生日设置</h3>
+      <p class="modal-desc">修改你的专属生日，AI 将每天为你定制独一无二的星座运势与每日幸运色。</p>
+      <div class="form-group">
+        <label for="userBirthdayInput">你的生日 (年/月/日)</label>
+        <input type="date" id="userBirthdayInput" class="cozy-input" value="2000-09-06">
+      </div>
+      <div class="form-group">
+        <label for="userNameInput">你的昵称</label>
+        <input type="text" id="userNameInput" class="cozy-input" value="April">
+      </div>
+      <button class="primary-cozy-btn theme-colored-btn full-width" id="saveProfileBtn">保存设置</button>
+    </div>
+  </div>
+
+  <!-- 回忆胶囊 Modal -->
+  <div class="cozy-modal-overlay" id="memoryModal">
+    <div class="cozy-modal-card">
+      <button class="modal-close-btn" id="closeMemoryModalBtn">✕</button>
+      <div class="memory-header-tag" id="memoryDateTitle">📅 回忆胶囊</div>
+      <div class="memory-card-body">
+        <div class="memory-mood-pill" id="memoryMoodBadge">💛 温暖元气</div>
+        <div class="memory-photo-container" id="memoryPhotoContainer" style="display: none;">
+          <div class="polaroid-card-frame">
+            <img id="memoryPhotoImg" src="" alt="回忆照片">
+            <span class="polaroid-caption">Memory Polaroid 📷</span>
+          </div>
+        </div>
+        <p class="memory-content-text" id="memoryContentText">这里存放着过去的回忆...</p>
+        <blockquote class="memory-ai-quote" id="memoryAiQuote">当时的评语...</blockquote>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📦 抽屉 9：3D 模型管理与导入中心 -->
+  <div class="frosted-glass-drawer" id="modal-glb-loader">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <span class="drawer-icon">📦</span>
+        <h2>3D 模型管理</h2>
+      </div>
+      <button class="drawer-close-btn" data-close="modal-glb-loader">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="glb-intro-card">
+        <h3>✨ 3D 高精模型支持 (Three.js & GLB)</h3>
+        <p>支持加载 Trellis / Meshy 等 AI 工具生成的 <code>.glb</code> / <code>.gltf</code> 3D 资产，自动居中适配并应用柔和光影。</p>
+      </div>
+
+      <!-- 拖拽上传区 -->
+      <div class="glb-dropzone" id="glbDropZone">
+        <div class="drop-icon">📥</div>
+        <div class="drop-title">拖拽 .glb / .gltf 模型文件至此处</div>
+        <div class="drop-sub">或点击下方按钮选择本地文件</div>
+        <input type="file" id="glbFileInput" accept=".glb,.gltf" style="display:none;">
+        <button type="button" class="primary-cozy-btn theme-colored-btn" id="selectGlbFileBtn" style="margin-top:12px;">
+          📂 选择本地 GLB 文件
+        </button>
+      </div>
+
+      <!-- 当前模型状态与微调切换 -->
+      <div class="glb-status-card">
+        <div class="status-row">
+          <span>当前状态：</span>
+          <b id="currentModelModeLabel">检测中...</b>
+        </div>
+        <div class="glb-actions-row" style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px;">
+          <button type="button" class="primary-cozy-btn small-btn theme-colored-btn" id="loadTrellisRoomBtn">
+            ✨ 载入 Trellis AI 模型 (room.glb)
+          </button>
+          <button type="button" class="secondary-cozy-btn small-btn" id="resetToDefaultRoomBtn">
+            🔄 恢复默认几何空间
+          </button>
+          <button type="button" class="secondary-cozy-btn small-btn" id="toggleModelWireframeBtn">
+            🌐 线框模式
+          </button>
+        </div>
+
+        <!-- 模型微调工具条 -->
+        <div class="glb-tuning-row" style="margin-top:14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+          <span style="font-size:12px; color:#8C827A;">模型微调：</span>
+          <button type="button" class="secondary-cozy-btn small-btn" id="rotateModelLeftBtn" title="逆时针旋转 45°">↺ 旋转 45°</button>
+          <button type="button" class="secondary-cozy-btn small-btn" id="rotateModelRightBtn" title="顺时针旋转 45°">↻ 旋转 45°</button>
+          <button type="button" class="secondary-cozy-btn small-btn" id="scaleModelUpBtn" title="放大模型">➕ 放大</button>
+          <button type="button" class="secondary-cozy-btn small-btn" id="scaleModelDownBtn" title="缩小模型">➖ 缩小</button>
+          <button type="button" class="secondary-cozy-btn small-btn" id="togglePlinthBtn" title="切换底座显隐">🏷️ 艺术展示底座</button>
+        </div>
+      </div>
+
+      <!-- 提示指引 -->
+      <div class="glb-help-tips">
+        <h4>💡 说明：</h4>
+        <ol>
+          <li>支持将 Trellis AI 或 Meshy 导出的 <b>.glb</b> 命名为 <code>room.glb</code> 置于项目目录，页面启动时将自动检测并载入。</li>
+          <li>也支持随时点击上方按钮或直接将新的 <code>.glb</code> 文件拖拽至此即刻预览。</li>
+          <li>鼠标按住左键拖拽可 360° 环视，滚轮缩放视角。</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script src="ai.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

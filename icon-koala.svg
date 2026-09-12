@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFDF9"/>
+      <stop offset="50%" stop-color="#FDF4ED"/>
+      <stop offset="100%" stop-color="#F2EAF7"/>
+    </linearGradient>
+    <linearGradient id="crownGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFE57F"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#D5C5E6" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- 背景圆形 -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)" stroke="#EADFD0" stroke-width="6"/>
+
+  <!-- 考拉盈盈主体 -->
+  <g filter="url(#softShadow)" transform="translate(0, 8)">
+    <!-- 两个毛茸茸大圆耳 -->
+    <g class="ears">
+      <!-- 左耳 -->
+      <circle cx="120" cy="180" r="85" fill="#E5DBF5" stroke="#CEBEDF" stroke-width="7"/>
+      <circle cx="125" cy="180" r="54" fill="#FFFFFF"/>
+      <circle cx="130" cy="180" r="36" fill="#F7F3FC"/>
+      <!-- 右耳 -->
+      <circle cx="392" cy="180" r="85" fill="#E5DBF5" stroke="#CEBEDF" stroke-width="7"/>
+      <circle cx="387" cy="180" r="54" fill="#FFFFFF"/>
+      <circle cx="382" cy="180" r="36" fill="#F7F3FC"/>
+    </g>
+
+    <!-- 脑袋轮廓 -->
+    <ellipse cx="256" cy="265" rx="145" ry="125" fill="#E5DBF5" stroke="#CEBEDF" stroke-width="7"/>
+
+    <!-- 金黄色小皇冠 -->
+    <g class="crown" transform="translate(206, 75)">
+      <polygon points="0,55 0,18 25,38 50,0 75,38 100,18 100,55" fill="url(#crownGrad)" stroke="#D97706" stroke-width="4"/>
+      <circle cx="50" cy="42" r="7" fill="#FFFFFF" opacity="0.95"/>
+      <circle cx="20" cy="48" r="4.5" fill="#FFFFFF" opacity="0.8"/>
+      <circle cx="80" cy="48" r="4.5" fill="#FFFFFF" opacity="0.8"/>
+    </g>
+
+    <!-- 豆豆眼 -->
+    <circle cx="198" cy="245" r="11" fill="#3D304A"/>
+    <circle cx="314" cy="245" r="11" fill="#3D304A"/>
+    <!-- 眼神高光 -->
+    <circle cx="202" cy="241" r="3.8" fill="#FFFFFF"/>
+    <circle cx="318" cy="241" r="3.8" fill="#FFFFFF"/>
+
+    <!-- 萌萌小腮红 -->
+    <ellipse cx="166" cy="275" rx="22" ry="12" fill="#FDB8C6" opacity="0.8"/>
+    <ellipse cx="346" cy="275" rx="22" ry="12" fill="#FDB8C6" opacity="0.8"/>
+
+    <!-- 浅紫灰柔和圆润小鼻头 -->
+    <ellipse cx="256" cy="268" rx="28" ry="36" fill="#9D8CAE"/>
+    <!-- 鼻子微光点 -->
+    <ellipse cx="252" cy="254" rx="11" ry="6" fill="#FFFFFF" opacity="0.45"/>
+
+    <!-- 粉色小蝴蝶结 -->
+    <g class="bowtie" transform="translate(216, 375)">
+      <polygon points="40,22 0,4 6,40" fill="#FFB5C5" stroke="#F472B6" stroke-width="4.5"/>
+      <polygon points="40,22 80,4 74,40" fill="#FFB5C5" stroke="#F472B6" stroke-width="4.5"/>
+      <circle cx="40" cy="22" r="11" fill="#F472B6"/>
+    </g>
+  </g>
+</svg>
